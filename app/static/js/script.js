@@ -15,15 +15,33 @@ document.addEventListener('DOMContentLoaded', () => {
         validationArea.style.display = 'none';
         runBtn.disabled = true;
 
-        // 에이전트 로그 시뮬레이션
-        await addLog("Crawler Agent: 페이지 접속 및 HTML 파싱 중...", 800);
-        await addLog("Crawler Agent: 상품명, 가격, 리뷰 수 데이터 추출 성공.", 1000);
-        await addLog("Context Agent: 뷰티 카테고리 특성 데이터 분류 중 (성분, 용량)...", 1200);
-        await addLog("Linker Agent: Schema.org v24.0 가이드라인에 맞춰 구조화 중...", 1000);
-        await addLog("System: 모든 프로세스 완료. JSON-LD를 생성합니다.", 500);
+        try {
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: url })
+            });
 
-        // 결과 표시 (샘플 데이터 사용)
-        displayResults();
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // 로그를 순차적으로 표시
+                for (const log of data.result.logs) {
+                    await addLog(log, 500);
+                }
+
+                // 결과 표시
+                displayResults(data.result.json_ld);
+            } else {
+                alert('Error: ' + (data.message || '알 수 없는 오류'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('요청 중 오류가 발생했습니다.');
+        }
+
         runBtn.disabled = false;
     });
 
@@ -40,36 +58,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function displayResults() {
-        // fetch('sample_response.json') 등으로 가져올 데이터
-        const mockData = {
-            "productName": "A사 수분 가득 히알루론산 크림 50ml",
-            "price": "28,000",
-            "rating": "4.8",
-            "reviewCount": "1,540",
-            "description": "피부 깊숙이 수분을 전달하는 고농축 히알루론산 크림입니다. 모든 피부 타입에 적합하며 24시간 보습이 지속됩니다."
-        };
+    function displayResults(jsonLd) {
+        // JSON-LD를 스타일링된 텍스트로 변환
+        const jsonCode = JSON.stringify(jsonLd, null, 2)
+            .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+            .replace(/: "([^"]+)"/g, ': <span class="json-value">"$1"</span>')
+            .replace(/: ([^,\n}]+)/g, ': <span class="json-value">$1</span>');
 
-        // JSON-LD 텍스트 생성
-        const jsonCode = `{
-  <span class="json-key">"@context"</span>: <span class="json-value">"https://schema.org/"</span>,
-  <span class="json-key">"@type"</span>: <span class="json-value">"Product"</span>,
-  <span class="json-key">"name"</span>: <span class="json-value">"${mockData.productName}"</span>,
-  <span class="json-key">"description"</span>: <span class="json-value">"${mockData.description}"</span>,
-  <span class="json-key">"aggregateRating"</span>: {
-    <span class="json-key">"@type"</span>: <span class="json-value">"AggregateRating"</span>,
-    <span class="json-key">"ratingValue"</span>: <span class="json-value">"${mockData.rating}"</span>,
-    <span class="json-key">"reviewCount"</span>: <span class="json-value">"${mockData.reviewCount}"</span>
-  }
-}`;
         jsonOutput.innerHTML = jsonCode;
         validationArea.style.display = 'block';
 
-        // 구글 프리뷰 업데이트
-        document.getElementById('prevTitle').innerText = mockData.productName;
-        document.getElementById('prevDesc').innerText = mockData.description;
-        document.getElementById('prevRating').innerText = `${mockData.rating} (${mockData.reviewCount} reviews)`;
-        document.getElementById('prevPrice').innerText = `₩${mockData.price}`;
+        // 구글 프리뷰 업데이트 (jsonLd에서 데이터 추출)
+        document.getElementById('prevTitle').innerText = jsonLd.name || 'Product Name';
+        document.getElementById('prevDesc').innerText = jsonLd.description || 'Description';
+        document.getElementById('prevRating').innerText = `${jsonLd.aggregateRating?.ratingValue || '0'} (${jsonLd.aggregateRating?.reviewCount || '0'} reviews)`;
+        document.getElementById('prevPrice').innerText = `₩${jsonLd.offers?.price || '0'}`;
     }
 
     // 복사 기능
