@@ -1,0 +1,103 @@
+:root {
+    --bg-color: #0b101a;
+    --card-bg: #161b22;
+    --border-color: #30363d;
+    --terminal-bg: #0d1117;
+    --accent-color: #58a6ff;
+    --text-main: #c9d1d9;
+    --text-muted: #8b949e;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* 카드 공통 스타일 */
+.custom-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.card-header-custom {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 왼쪽 터미널 로그 */
+.input-section { padding: 1.5rem; }
+.form-control-dark {
+    background-color: var(--terminal-bg);
+    border: 1px solid var(--border-color);
+    color: white;
+}
+.form-control-dark:focus {
+    background-color: var(--terminal-bg);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: none;
+}
+
+.terminal-log {
+    background-color: var(--terminal-bg);
+    height: 550px;
+    padding: 1rem;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 0.85rem;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.log-line { margin-bottom: 6px; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 오른쪽 JSON 코드 표시 */
+.json-display {
+    background-color: var(--terminal-bg);
+    padding: 1.2rem;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 0.85rem;
+    height: 300px;
+    overflow-y: auto;
+}
+.json-key { color: #ff7b72; }
+.json-value { color: #a5d6ff; }
+.validation-msg {
+    color: #3fb950;
+    padding: 10px 1.5rem;
+    font-size: 0.85rem;
+    background-color: rgba(63, 185, 80, 0.05);
+}
+
+/* Google Preview */
+.preview-body { padding: 1.5rem; }
+.google-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px;
+    color: #202124;
+}
+.google-favicon {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #f1f3f4; display: flex; align-items: center; justify-content: center;
+    margin-right: 10px; font-size: 11px; color: #e91e63; font-weight: bold;
+}
+.google-url { font-size: 13px; color: #4d5156; }
+.google-title { color: #1a0dab; font-size: 19px; margin-top: 4px; }
+.google-stars { color: #fbbc04; margin-top: 4px; font-size: 13px; }
+.google-desc { font-size: 14px; color: #4d5156; margin-top: 7px; line-height: 1.5; }
+.enhanced-footer {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f3f4;
+    font-size: 12px; color: #70757a;
+}
+
+.btn-copy {
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--accent-color); font-size: 0.75rem;
+}
