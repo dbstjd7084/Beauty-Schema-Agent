@@ -59,25 +59,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayResults(jsonLd) {
-        // JSON-LD를 스타일링된 텍스트로 변환
         const jsonCode = JSON.stringify(jsonLd, null, 2)
             .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
             .replace(/: "([^"]+)"/g, ': <span class="json-value">"$1"</span>')
             .replace(/: ([^,\n}]+)/g, ': <span class="json-value">$1</span>');
 
-        jsonOutput.innerHTML = jsonCode;
-        validationArea.style.display = 'block';
+        document.getElementById('jsonOutput').innerHTML = jsonCode;
+        document.getElementById('validationArea').style.display = 'block';
 
-        // 구글 프리뷰 업데이트 (jsonLd에서 데이터 추출)
-        document.getElementById('prevTitle').innerText = jsonLd.name || 'Product Name';
-        document.getElementById('prevDesc').innerText = jsonLd.description || 'Description';
-        document.getElementById('prevRating').innerText = `${jsonLd.aggregateRating?.ratingValue || '0'} (${jsonLd.aggregateRating?.reviewCount || '0'} reviews)`;
-        document.getElementById('prevPrice').innerText = `₩${jsonLd.offers?.price || '0'}`;
+        updateGooglePreview(jsonLd); 
     }
 
-    // 복사 기능
-    document.getElementById('copyBtn').addEventListener('click', () => {
-        const text = jsonOutput.innerText;
-        navigator.clipboard.writeText(text).then(() => alert("복사되었습니다!"));
-    });
+    function updateGooglePreview(jsonLd) {
+        const type = jsonLd['@type'];
+        
+        const sections = ['prevRatingArea', 'prevVideoArea', 'shoppingInfo', 'localInfo'];
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        document.getElementById('prevTitle').innerText = jsonLd.name || jsonLd.headline || 'Product Name';
+        document.getElementById('prevDesc').innerText = jsonLd.description || 'Description...';
+
+        if (jsonLd.breadcrumb) {
+            document.getElementById('prevBreadcrumb').innerText = "yoursite.com › products";
+        }
+
+        switch(type) {
+            case 'Product':
+                document.getElementById('shoppingInfo').style.display = 'flex';
+                document.getElementById('prevPrice').innerText = `₩${jsonLd.offers?.price || '0'}`;
+                renderReview(jsonLd.aggregateRating);
+                break;
+
+            case 'VideoObject':
+                document.getElementById('prevVideoArea').style.display = 'block';
+                break;
+
+            case 'LocalBusiness':
+                document.getElementById('localInfo').style.display = 'block';
+                const address = jsonLd.address?.streetAddress || '서울시 강남구...';
+                document.getElementById('localInfo').innerHTML = `<i class="bi bi-geo-alt"></i> ${address} · 영업중`;
+                break;
+
+            case 'Review': 
+                renderReview(jsonLd);
+                break;
+
+            case 'Article':
+                break;
+        }
+    }
+
+    function renderReview(ratingData) {
+        if (ratingData) {
+            document.getElementById('prevRatingArea').style.display = 'block';
+            const val = ratingData.ratingValue || '0';
+            const count = ratingData.reviewCount || ratingData.ratingCount || '0';
+            document.getElementById('prevRatingText').innerText = `${val} (${count} reviews)`;
+        }
+    }
 });

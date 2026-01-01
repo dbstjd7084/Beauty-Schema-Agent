@@ -1,44 +1,60 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import httpx
+from app.agents.graph import app as workflow
 
 router = APIRouter()
 
 class AnalysisRequest(BaseModel):
     url: str
 
+# 테스트용 뷰티 상품 HTML 샘플
+MOCK_BEAUTY_HTML = """
+<div class="product-detail">
+    <h1 class="p-name">[아모레] 헤라 블랙 쿠션 21호</h1>
+    <div class="price-info">
+        <span class="discount">20%</span>
+        <span class="current-price">52,800원</span>
+    </div>
+    <div class="review-summary">
+        <span class="rating">4.9</span>
+        <span class="count">4,201개 리뷰</span>
+    </div>
+    <p class="description">강력한 커버력과 가벼운 밀착감을 동시에 선사하는 매트 쿠션의 정석</p>
+</div>
+"""
+
 @router.post("/analyze")
 async def start_analysis(request: AnalysisRequest):
-    """
-    뷰티 사이트 URL을 받아 AI 에이전트가 분석 시작
-    """
-    # 더미 데이터 반환 (형식 맞춤)
-    return {
-        "status": "success",
-        "url": request.url,
-        "result": {
-            "json_ld": {
-                "@context": "https://schema.org",
-                "@type": "Product",
-                "name": "A사 수분 가득 히알루론산 크림 50ml",
-                "description": "피부 깊숙이 수분을 전달하는 고농축 히알루론산 크림입니다. 모든 피부 타입에 적합하며 24시간 보습이 지속됩니다.",
-                "aggregateRating": {
-                    "@type": "AggregateRating",
-                    "ratingValue": "4.8",
-                    "reviewCount": "1540"
-                },
-                "offers": {
-                    "@type": "Offer",
-                    "price": "28000",
-                    "priceCurrency": "KRW",
-                    "availability": "https://schema.org/InStock"
-                }
-            },
-            "logs": [
-                "Crawler Agent: 페이지 접속 및 HTML 파싱 중...",
-                "Crawler Agent: 상품명, 가격, 리뷰 수 데이터 추출 성공.",
-                "Context Agent: 뷰티 카테고리 특성 데이터 분류 중 (성분, 용량)...",
-                "Linker Agent: Schema.org v24.0 가이드라인에 맞춰 구조화 중...",
-                "System: 모든 프로세스 완료. JSON-LD를 생성합니다."
-            ]
+    try:
+        # 1. 실제 HTML 대신 테스트 데이터 사용 여부 결정
+        if "test" in request.url.lower() or not request.url.startswith("http"):
+            html_content = MOCK_BEAUTY_HTML
+            print("--- 테스트 모드: Mock HTML을 사용합니다 ---")
+        else:
+            # 실제 URL인 경우에만 크롤링 실행
+            async with httpx.AsyncClient() as client:
+                response = await client.get(request.url, timeout=5.0)
+                html_content = response.text
+
+        # 2. 랭그래프 실행
+        final_state = workflow.invoke({
+            "url": request.url,
+            "html_content": html_content,
+            "retry_count": 0
+        })
+
+        # 3. 결과 반환
+        return {
+            "status": "success",
+            "result": {
+                "json_ld": final_state.get("extracted_data"),
+                "logs": [
+                    "System: 데이터 소스 준비 완료 (Mock/Real)",
+                    f"Classifier: 선택된 스키마 -> {final_state.get('selected_schemas')}",
+                    "Extractor: Gemini 모델이 가짜 HTML에서 정보를 추출했습니다."
+                ]
+            }
         }
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

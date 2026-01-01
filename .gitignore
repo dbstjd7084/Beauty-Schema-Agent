@@ -1,0 +1,66 @@
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.flakes8
+.installed.cfg
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+.pip-internal/
+
+### Environments (가상환경) ###
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+### API Keys & Secrets ###
+.env
+.env.*
+!.env.example
+secrets.json
+*.pem
+
+### IDE - VS Code ###
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+### IDE - PyCharm ###
+.idea/
+
+### OS 관련 ###
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+### Logs & Databases ###
+*.log
+local_database.db
+*.sqlite3
+
+### Testing ###
+.pytest_cache/
+.coverage
+htmlcov/

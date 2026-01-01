@@ -64,25 +64,40 @@
                             <div class="google-favicon">B</div>
                             <div class="google-url" id="prevUrl">yoursite.com › products</div>
                         </div>
-                        <div class="google-title" id="prevTitle">Product Name - Beauty Agent</div>
-                        <div class="google-stars">
-                            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
-                            <span class="ms-1 text-dark" style="font-size: 14px;" id="prevRating">4.5 (0 reviews)</span>
+
+                        <div class="google-title" id="prevTitle">분석 대기 중...</div>
+                        <div class="google-desc" id="prevDesc">에이전트가 분석을 완료하면 이곳에 설명문이 생성됩니다.</div>
+
+                        <div id="prevRatingArea" class="google-stars" style="display:none;">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-half text-warning"></i>
+                            <span class="ms-1 text-dark" style="font-size: 14px;" id="prevRatingText">0 (0 reviews)</span>
                         </div>
-                        <div class="google-desc" id="prevDesc">
-                            에이전트가 분석을 완료하면 이곳에 검색 결과 설명문이 생성됩니다.
+
+                        <div id="prevVideoArea" class="mt-2" style="display:none;">
+                            <div style="background: #f1f3f4; border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #70757a;">
+                                <i class="bi bi-play-btn-fill me-1"></i> Video Preview Available
+                            </div>
                         </div>
+
                         <div class="enhanced-footer">
-                            <i class="bi bi-info-circle me-1"></i> Enhanced with JSON-LD structured data
-                            <div class="mt-2 text-primary d-flex gap-3">
+                            <i class="bi bi-info-circle me-1"></i> Rich Result Preview
+                            
+                            <div id="ProductInfo" class="mt-2 text-primary d-flex gap-3" style="display:none;">
                                 <span><i class="bi bi-tag-fill me-1"></i><span id="prevPrice">₩0</span></span>
                                 <span><i class="bi bi-check-lg me-1"></i>In Stock</span>
+                            </div>
+
+                            <div id="localInfo" class="mt-2 text-secondary" style="display:none; font-size: 0.85rem;">
+                                <i class="bi bi-geo-alt-fill me-1"></i><span id="prevAddress">Address Info</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div> <!-- col-6 end -->
     </div> <!-- row end -->
 </div>
