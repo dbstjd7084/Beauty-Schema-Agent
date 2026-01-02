@@ -8,6 +8,6 @@ class ListItem(BaseSchema):
     name: str
     item: str = Field(..., description="해당 경로의 URL")
 
-class BreadcrumbSchema(BaseSchema):
+class BreadCrumbSchema(BaseSchema):
     type: str = Field(default="BreadcrumbList", alias="@type")
     itemListElement: List[ListItem]

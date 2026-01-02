@@ -11,7 +11,8 @@ from app.agents.graph import app as workflow
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Beauty Industry JSON-LD Generator AI Agent",
-    version="1.0.0"
+    version="1.0.0",
+    debug=True
 )
 
 app.add_middleware(
@@ -39,3 +40,5 @@ def health_check():
         "status": "healthy", 
         "project": settings.PROJECT_NAME
     }
+
+# uvicorn app.main:app --reload

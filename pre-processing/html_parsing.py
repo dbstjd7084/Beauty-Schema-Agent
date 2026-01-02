@@ -72,7 +72,7 @@ def refined_semantic_processor(html_content):
 
 async def run_crawler(target_url):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
@@ -109,7 +109,7 @@ async def run_crawler(target_url):
             await browser.close()
 
 if __name__ == "__main__":
-    URL = "https://www.amoremall.com/kr/ko/display/live"
+    URL = "https://www.amoremall.com/kr/ko/aibc/web/"
     
     # 1. 크롤링 실행 및 결과 받기 (딕셔너리 형태)
     result_json = asyncio.run(run_crawler(URL))

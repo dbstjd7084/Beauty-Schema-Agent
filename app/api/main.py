@@ -1,14 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import httpx
 from app.agents.graph import app as workflow
+from app.core.loader import fetch_url
+from app.core.processor import preprocess_pipeline
+import httpx
 
 router = APIRouter()
 
 class AnalysisRequest(BaseModel):
     url: str
 
-# 테스트용 뷰티 상품 HTML 샘플
 MOCK_BEAUTY_HTML = """
 <div class="product-detail">
     <h1 class="p-name">[아모레] 헤라 블랙 쿠션 21호</h1>
@@ -24,37 +25,36 @@ MOCK_BEAUTY_HTML = """
 </div>
 """
 
+from app.core.loader import fetch_url
+from app.core.processor import preprocess_pipeline
+from app.agents.graph import app as workflow # 컴파일된 그래프
+
 @router.post("/analyze")
 async def start_analysis(request: AnalysisRequest):
-    try:
-        # 1. 실제 HTML 대신 테스트 데이터 사용 여부 결정
-        if "test" in request.url.lower() or not request.url.startswith("http"):
-            html_content = MOCK_BEAUTY_HTML
-            print("--- 테스트 모드: Mock HTML을 사용합니다 ---")
-        else:
-            # 실제 URL인 경우에만 크롤링 실행
-            async with httpx.AsyncClient() as client:
-                response = await client.get(request.url, timeout=5.0)
-                html_content = response.text
+    if "test" in request.url.lower() or not request.url.startswith("http"):
+        html_content = MOCK_BEAUTY_HTML # 테스트용
+        media_map = {"images": {}, "videos": {}}
+    else:
+        raw_html = await fetch_url(request.url) 
+        html_content, media_map = preprocess_pipeline(raw_html)
 
-        # 2. 랭그래프 실행
-        final_state = workflow.invoke({
-            "url": request.url,
-            "html_content": html_content,
-            "retry_count": 0
-        })
+    final_state = workflow.invoke({
+        "url": request.url,
+        "html_content": html_content, # 정제된 마크다운 텍스트
+        "media_map": media_map,    
+        "schema_index": 0,            
+        "retry_count": 0
+    })
 
-        # 3. 결과 반환
-        return {
-            "status": "success",
-            "result": {
-                "json_ld": final_state.get("extracted_data"),
-                "logs": [
-                    "System: 데이터 소스 준비 완료 (Mock/Real)",
-                    f"Classifier: 선택된 스키마 -> {final_state.get('selected_schemas')}",
-                    "Extractor: Gemini 모델이 가짜 HTML에서 정보를 추출했습니다."
-                ]
-            }
+    return {
+        "status": "success",
+        "result": {
+            "json_ld": final_state.get("extracted_data"),
+            "media_used": media_map,
+            "logs": [
+                "System: Playwright 크롤링 및 마크다운 전처리 완료",
+                f"Classifier: 선택된 스키마 -> {final_state.get('selected_schemas')}",
+                "Extractor: 전문가 노드가 정제된 텍스트에서 정보 추출 완료"
+            ]
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    }

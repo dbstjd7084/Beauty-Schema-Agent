@@ -1,36 +1,41 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
 from ..state import GraphState
-from app.schemas.product import ProductSchema
+from app.schemas.registry import SCHEMA_MAP
 from app.core.llm import call_llm
-
-# 1. LLM 및 구조화된 출력 설정
+from app.core.processor import resolve_media_links 
 llm = call_llm()
-structured_llm = llm.with_structured_output(ProductSchema)
 
 def run(state: GraphState):
-    print(f"--- Gemini 모델 추출 단계 (Simple Mode) ---")
+    idx = state.get("schema_index", 0)
+    schemas = state.get("selected_schemas", [])
+    media_map = state.get("media_map", {})
     
+    if idx >= len(schemas):
+        return {}
+
+    target_schema_name = schemas[idx]
+    schema_class = SCHEMA_MAP.get(target_schema_name)
+    
+    print(f"--- [{idx+1}/{len(schemas)}] {target_schema_name} 전문가 추출 단계 ---")
+    
+    structured_llm = llm.with_structured_output(schema_class)
     html_input = state.get('html_content', "")
     
-    # 프롬프트를 스키마에 맞춰 간소화 (추가 필드 요청 제거)
-    prompt = f"""당신은 HTML에서 상품명을 추출하는 전문가입니다.
-    다음 HTML 소스에서 가장 핵심적인 '상품명' 하나만 찾아 JSON으로 반환하세요.
-    
-    HTML:
-    {html_input}
-    """
+    prompt = f"당신은 {target_schema_name} 정보 추출 전문가입니다. HTML에서 해당 정보를 JSON으로 추출하세요."
     
     try:
-        # LLM 호출 -> ProductSchema 객체 반환
-        result = structured_llm.invoke(prompt)
+        result = structured_llm.invoke(prompt + f"\nHTML: {html_input}")
+        data_dict = result.model_dump(by_alias=True)
         
-        # 결과를 딕셔너리로 변환 (alias 적용하여 @type 포함)
-        extracted_dict = result.model_dump(by_alias=True)
-        print("추출된 데이터:", extracted_dict)
-        
-        return {"extracted_data": extracted_dict}
-    
+        # --- [핵심: 특정 스키마일 경우 즉시 URL 치환] ---
+        if target_schema_name in ["Video", "ImageMeta"]:
+            # 추출된 딕셔너리 내부의 [IMG_XXX], [VID_XXX]를 실제 URL로 바꿈
+            data_dict = resolve_media_links(data_dict, media_map)
+            print(f"🔗 {target_schema_name} 미디어 링크 치환 완료")
+
+        return {
+            "extracted_data": {target_schema_name: data_dict},
+            "schema_index": idx + 1
+        }
     except Exception as e:
-        print(f"추출 중 오류 발생: {e}")
-        # GraphState의 errors 리스트에 에러 추가 (operator.add)
-        return {"errors": [f"Extraction Error: {str(e)}"]}
+        print(f"❌ {target_schema_name} 추출 에러: {e}")
+        return {"errors": [str(e)], "schema_index": idx + 1}
