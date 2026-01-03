@@ -3,8 +3,12 @@ from .state import GraphState
 from langgraph.graph import StateGraph, END
 
 def should_continue(state: GraphState):
-    if state["schema_index"] < len(state["selected_schemas"]):
+    tasks = state.get("extraction_tasks", [])
+    current_idx = state.get("schema_index", 0)
+
+    if current_idx < len(tasks):
         return "extract"
+    
     return "validate"
 
 def create_workflow():

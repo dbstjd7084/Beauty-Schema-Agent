@@ -9,10 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = urlInput.value;
         if (!url) return alert("URL을 입력해주세요.");
 
+        document.getElementById('notifUrl').innerText = url;
+
         // 초기화
         logWindow.innerHTML = '';
         jsonOutput.innerHTML = '<span class="text-muted">// Analyzing...</span>';
         validationArea.style.display = 'none';
+        
+        const monitorCard = document.querySelector('.custom-card .bi-broadcast').closest('.custom-card');
+        monitorCard.style.display = 'none'; 
+
         runBtn.disabled = true;
 
         try {
@@ -30,6 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 로그를 순차적으로 표시
                 for (const log of data.result.logs) {
                     await addLog(log, 500);
+                }
+
+                if (data.result.is_live) {
+                    await addLog("실시간 라이브 스트리밍이 감지되었습니다.", 300);
+                    monitorCard.style.display = 'block'; // 감지되었을 때만 표시
                 }
 
                 // 결과 표시
@@ -71,43 +82,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateGooglePreview(jsonLd) {
-        const type = jsonLd['@type'];
+        let primaryData = jsonLd;
+        if (!jsonLd['@type']) {
+            const firstKey = Object.keys(jsonLd)[0];
+            primaryData = jsonLd[firstKey];
+        }
+
+        if (!primaryData) return;
+
+        const type = primaryData['@type'];
         
-        const sections = ['prevRatingArea', 'prevVideoArea', 'shoppingInfo', 'localInfo'];
+        const sections = ['prevRatingArea', 'prevVideoArea', 'ProductInfo', 'localInfo'];
         sections.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
 
-        document.getElementById('prevTitle').innerText = jsonLd.name || jsonLd.headline || 'Product Name';
-        document.getElementById('prevDesc').innerText = jsonLd.description || 'Description...';
-
-        if (jsonLd.breadcrumb) {
-            document.getElementById('prevBreadcrumb').innerText = "yoursite.com › products";
+        document.getElementById('prevTitle').innerText = primaryData.name || primaryData.headline || primaryData.title || '분석된 결과 없음';
+        document.getElementById('prevDesc').innerText = primaryData.description || primaryData.articleBody?.substring(0, 150) || '설명이 없습니다.';
+        
+        // URL/브레드크럼 표시 업데이트
+        const urlEl = document.getElementById('prevUrl');
+        if (primaryData.url) {
+            urlEl.innerText = primaryData.url.replace(/^https?:\/\//, '');
         }
 
         switch(type) {
             case 'Product':
-                document.getElementById('shoppingInfo').style.display = 'flex';
-                document.getElementById('prevPrice').innerText = `₩${jsonLd.offers?.price || '0'}`;
-                renderReview(jsonLd.aggregateRating);
-                break;
-
-            case 'VideoObject':
-                document.getElementById('prevVideoArea').style.display = 'block';
-                break;
-
-            case 'LocalBusiness':
-                document.getElementById('localInfo').style.display = 'block';
-                const address = jsonLd.address?.streetAddress || '서울시 강남구...';
-                document.getElementById('localInfo').innerHTML = `<i class="bi bi-geo-alt"></i> ${address} · 영업중`;
+                document.getElementById('ProductInfo').style.display = 'flex';
+                
+                const price = primaryData.offers?.price || primaryData.offers?.[0]?.price || '0';
+                document.getElementById('prevPrice').innerText = `₩${price}`;
+                renderReview(primaryData.aggregateRating);
                 break;
 
             case 'Review': 
-                renderReview(jsonLd);
+                renderReview(primaryData);
+                break;
+
+            case 'LocalBusiness':
+            case 'Organization':
+                document.getElementById('localInfo').style.display = 'block';
+                const location = primaryData.address?.streetAddress || primaryData.address || primaryData.location || '정보 없음';
+                document.getElementById('localInfo').innerHTML = `<i class="bi bi-geo-alt"></i> ${location}`;
+                break;
+
+            case 'VideoObject':
+            case 'Video':
+                document.getElementById('prevVideoArea').style.display = 'block';
                 break;
 
             case 'Article':
+                if (primaryData.author) {
+                    urlEl.innerText += ` · ${primaryData.author.name || primaryData.author}`;
+                }
+                break;
+
+            case 'BreadcrumbList':
+            case 'Breadcrumb':
+                if (primaryData.itemListElement) {
+                    const path = primaryData.itemListElement.map(item => item.name).join(' › ');
+                    urlEl.innerText = path;
+                }
+                break;
+
+            case 'ImageObject':
+            case 'ImageMeta':
+                document.getElementById('prevTitle').innerHTML = `<i class="bi bi-image me-1"></i> ` + document.getElementById('prevTitle').innerText;
                 break;
         }
     }

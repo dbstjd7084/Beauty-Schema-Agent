@@ -7,12 +7,22 @@ def replace_media_with_keys(soup: BeautifulSoup):
     """이미지 및 동영상을 [IMG_001] 형태의 키로 치환하고 맵을 반환합니다."""
     media_map = {"images": {}, "videos": {}}
     img_idx, vid_idx = 1, 1
+    seen_urls = set()
 
     for tag in soup.find_all(['img', 'video', 'iframe']):
         if tag.name == 'img':
-            img_id = f"IMG_{img_idx:03d}"
-            url = tag.get('src') or tag.get('data-src') or "unknown"
+
+            url = tag.get('data-src') or tag.get('src') or "unknown"
             alt = tag.get('alt', 'no-description').strip()
+            
+            base_url = url.split('?')[0]
+            if base_url in seen_urls:
+                tag.decompose()
+                continue
+            
+            seen_urls.add(base_url)
+            
+            img_id = f"IMG_{img_idx:03d}"
             media_map["images"][img_id] = {"url": url, "alt": alt}
             tag.replace_with(f" [{img_id} | {alt}] ")
             img_idx += 1
@@ -20,6 +30,12 @@ def replace_media_with_keys(soup: BeautifulSoup):
         elif tag.name == 'video' or (tag.name == 'iframe' and 'youtube' in (tag.get('src') or '')):
             vid_id = f"VID_{vid_idx:03d}"
             url = tag.get('src') or "unknown"
+            
+            if url in seen_urls:
+                tag.decompose()
+                continue
+            seen_urls.add(url)
+
             media_map["videos"][vid_id] = {"url": url}
             tag.replace_with(f" [{vid_id}] ")
             vid_idx += 1

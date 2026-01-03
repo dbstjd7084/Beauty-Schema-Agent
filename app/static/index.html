@@ -18,7 +18,7 @@
         
         <!-- 왼쪽 열: Input & Agent Reasoning Log -->
         <div class="col-lg-6">
-            <div class="custom-card h-100">
+            <div class="custom-card mb-4">
                 <div class="card-header-custom">
                     <span class="fw-bold"><i class="bi bi-robot me-2"></i>AI Agent Reasoning</span>
                     <span class="badge bg-primary">v2.4 Active</span>
@@ -34,6 +34,7 @@
                 </div>
             </div>
         </div>
+        
 
         <!-- 오른쪽 열: JSON-LD & Preview -->
         <div class="col-lg-6">
@@ -53,7 +54,7 @@
             </div>
 
             <!-- Google Search Preview -->
-            <div class="custom-card">
+            <div class="custom-card mb-4">
                 <div class="card-header-custom">
                     <span class="fw-bold"><i class="bi bi-google me-2"></i>Google Search Preview</span>
                     <span class="badge bg-info text-dark" style="font-size: 0.7rem;">Rich Results</span>
@@ -93,6 +94,27 @@
 
                             <div id="localInfo" class="mt-2 text-secondary" style="display:none; font-size: 0.85rem;">
                                 <i class="bi bi-geo-alt-fill me-1"></i><span id="prevAddress">Address Info</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEO Live Video Alert -->
+            <div class="custom-card" id="liveMonitorCard" style="display: none;">
+                <div class="card-header-custom d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-broadcast me-2 text-info"></i>Real-time SEO Monitor</span>
+                    <span class="badge bg-info text-dark" style="font-size: 0.7rem;">Live Stream Detection</span>
+                </div>
+                <div class="p-3">
+                    <div class="alert alert-dark border-secondary d-flex align-items-center mb-0" style="background: #1a1d21; border-radius: 8px;">
+                        <div class="flex-grow-1">
+                            <div class="text-info small fw-bold mb-1">
+                                <i class="bi bi-dot animate-pulse"></i> Live Broadcast Detected
+                            </div>
+                            <div class="small text-white-50">
+                                <div class="mb-1 text-white">Target: <span class="text-info text-decoration-underline" id="notifUrl">-</span></div>
+                                해당 페이지의 실시간 상태가 감지되었습니다. 검색 결과 반영을 위해 <strong>Indexing API</strong>를 호출하고, 방송 종료 시 마크업 업데이트에 유의하시기 바랍니다.
                             </div>
                         </div>
                     </div>

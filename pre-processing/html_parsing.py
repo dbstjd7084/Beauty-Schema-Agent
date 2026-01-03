@@ -16,6 +16,11 @@ def refined_semantic_processor(html_content):
 
     img_count = 0
     vid_count = 0
+    
+    # [추가] 중복 제거를 위한 Set (이미지 URL의 경로 기준)
+    seen_img_urls = set()
+    # [추가] 필터링할 플레이스홀더 키워드
+    placeholders = ['750.png', 'defaultImages', 'blank.gif', 'loading.gif']
 
     # 2. 모든 태그 순회
     for tag in list(soup.find_all(True)):
@@ -24,8 +29,24 @@ def refined_semantic_processor(html_content):
             
         # --- [미디어 식별 섹션] ---
         if tag.name == 'img':
-            img_url = tag.get('src') or tag.get('data-src') or "URL 없음"
+            # [해결 1] Lazy Loading 대응: data-src를 src보다 우선해서 가져옴
+            img_url = tag.get('data-src') or tag.get('src')
+            
+            # [해결 2] Placeholder 필터링: 유효하지 않은 이미지는 스킵
+            if not img_url or any(p in img_url for p in placeholders):
+                tag.decompose()
+                continue
+            
+            # [해결 3] 중복 제거: 쿼리 스트링(?...)을 제외한 순수 URL로 비교
+            base_url = img_url.split('?')[0]
+            if base_url in seen_img_urls:
+                tag.decompose()
+                continue
+            
+            seen_img_urls.add(base_url)
+            
             alt_text = tag.get('alt', '설명 없음').strip()
+            # 텍스트 내에 이미지를 삽입하는 마크다운 형식 유지
             tag.insert_before(f"\n\n[🖼️ 이미지 발견 | 설명: {alt_text} | 경로: {img_url}]\n\n")
             img_count += 1
             tag.decompose()
@@ -48,7 +69,7 @@ def refined_semantic_processor(html_content):
             tag.decompose()
             continue
 
-        # --- [속성 필터링 및 가시화 섹션] ---
+        # 나머지 속성 정제 로직
         new_attrs = {}
         current_attrs = tag.attrs if tag.attrs is not None else {}
         
@@ -58,16 +79,14 @@ def refined_semantic_processor(html_content):
                 new_attrs[simplified_key] = value
 
         tag.attrs = new_attrs
-
         if new_attrs:
             attr_string = " | ".join([f"{k}: {v}" for k, v in new_attrs.items()])
             if tag.get_text(strip=True):
                 tag.insert_before(f" {{#{attr_string}}} ")
 
     markdown_text = md(str(soup), heading_style="atx")
-    print(f"✅ 분석 완료: 이미지 {img_count}개, 동영상 {vid_count}개 감지됨")
+    print(f"✅ 분석 완료: 이미지 {img_count}개(중복/필터 제외), 동영상 {vid_count}개 감지됨")
     
-    # 미디어 개수 정보도 함께 반환하기 위해 튜플 형태로 리턴
     return markdown_text.strip(), img_count, vid_count
 
 async def run_crawler(target_url):
@@ -81,15 +100,15 @@ async def run_crawler(target_url):
         print(f"🌐 접속 중: {target_url}")
         
         try:
-            await page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
-            await page.wait_for_timeout(7000) 
-            await page.mouse.wheel(0, 2000)
-            await page.wait_for_timeout(2000)
+            await page.goto(target_url, wait_until="networkidle", timeout=60000)
+            
+            for i in range(3):
+                await page.mouse.wheel(0, 1500)
+                await page.wait_for_timeout(1500) # 로딩 대기
 
             content = await page.content()
             final_md, img_c, vid_c = refined_semantic_processor(content)
             
-            # JSON에 담을 데이터 구조 생성
             result_data = {
                 "target_url": target_url,
                 "crawl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -109,23 +128,14 @@ async def run_crawler(target_url):
             await browser.close()
 
 if __name__ == "__main__":
-    URL = "https://www.amoremall.com/kr/ko/aibc/web/"
+    URL = "https://www.amoremall.com/kr/ko/store/gate?srsltid=AfmBOooPQQmPZ2Ky_nz7qhF_GOp4aag5oM7w3jrBwyP-rHgyCwe7TOiH"
     
-    # 1. 크롤링 실행 및 결과 받기 (딕셔너리 형태)
     result_json = asyncio.run(run_crawler(URL))
 
-    # 2. 결과가 있으면 JSON 파일로 저장
     if result_json:
-        file_name = "amore_live_output.json"
-        
-        # 저장 폴더가 없다면 생성 (선택 사항)
-        # os.makedirs("output", exist_ok=True)
-        # file_path = os.path.join("output", file_name)
-
+        file_name = "amore_refined_output.json"
         with open(file_name, "w", encoding="utf-8") as f:
-            # indent=4로 보기 좋게 포맷팅, ensure_ascii=False로 한글 보존
             json.dump(result_json, f, ensure_ascii=False, indent=4)
-        
-        print(f"\n📂 JSON 파일 저장 완료: {file_name}")
+        print(f"\n📂 정제된 JSON 파일 저장 완료: {file_name}")
     else:
         print("\n⚠️ 저장할 결과물이 없습니다.")

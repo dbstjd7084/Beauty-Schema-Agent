@@ -45,7 +45,7 @@ body {
 
 .terminal-log {
     background-color: var(--terminal-bg);
-    height: 550px;
+    height: 650px;
     padding: 1rem;
     font-family: 'SFMono-Regular', Consolas, monospace;
     font-size: 0.85rem;
@@ -63,7 +63,7 @@ body {
     padding: 1.2rem;
     font-family: 'SFMono-Regular', Consolas, monospace;
     font-size: 0.85rem;
-    height: 300px;
+    height: 180px;
     overflow-y: auto;
 }
 .json-key { color: #ff7b72; }

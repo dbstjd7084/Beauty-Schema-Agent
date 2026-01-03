@@ -11,10 +11,11 @@ async def fetch_url(target_url: str) -> str:
         page = await context.new_page()
         
         try:
-            await page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
-            await page.wait_for_timeout(5000)
-            await page.mouse.wheel(0, 2000)
-            await page.wait_for_timeout(2000)
+            await page.goto(target_url, wait_until="domcontentloaded", timeout=30000)
+            
+            for _ in range(3):
+                await page.mouse.wheel(0, 1500)
+                await page.wait_for_timeout(1500)
             
             return await page.content()
         finally:
