@@ -47,7 +47,7 @@ def run(state: GraphState):
         print(f"[Extractor] {target_schema_name} 미디어 링크 치환 완료")
 
         return {
-            "extracted_data": {f"{target_schema_name}_{idx}": data_dict}, # 키값 중복 방지 예시
+            "extracted_data": {f"{target_schema_name}": data_dict},
             "schema_index": idx + 1
         }
     except Exception as e:

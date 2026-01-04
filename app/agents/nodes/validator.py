@@ -9,7 +9,7 @@ class ValidationResult(BaseModel):
     is_live: bool = Field(default=False, description="현재 페이지에서 실시간 라이브 방송(Live Streaming)이 진행 중인지 여부")
     reason: str = Field(description="검증 결과에 대한 요약 설명")
     missing_fields: List[str] = Field(default=[], description="누락되었거나 보완이 필요한 필드 목록")
-
+    
 llm = call_llm()
 validator_llm = llm.with_structured_output(ValidationResult)
 

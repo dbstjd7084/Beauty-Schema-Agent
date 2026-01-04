@@ -50,7 +50,6 @@ def run(state: GraphState):
     7. LocalBusiness: 오프라인 매장/지점 정보(주소, 전화번호, 영업시간, 위치 등)
     8. Video: 영상 콘텐츠 정보(제목, 설명, 썸네일, 업로드일, 재생 URL 등)
 
-
     HTML 내용:
     {html_input}
     """
